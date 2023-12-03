@@ -298,6 +298,7 @@ export class LinkedInProfileScraper {
 
     try {
       const page = await this.browser.newPage()
+      await page.setDefaultNavigationTimeout(0);
 
       // Use already open page
       // This makes sure we don't have an extra open tab consuming memory
