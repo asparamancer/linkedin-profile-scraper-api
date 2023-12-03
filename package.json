@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "start": "ts-node-dev -r dotenv/config --inspect=9230 --respawn --transpileOnly ./src/examples/server.ts",
+    "start": "ts-node-dev ./src/examples/server.ts -r dotenv/config --inspect=9230 --respawn --transpileOnly",
     "build": "npx tsc -p tsconfig.production.json",
     "test:watch": "NODE_ENV=test jest --watch --coverage",
     "test": "NODE_ENV=test jest --coverage",

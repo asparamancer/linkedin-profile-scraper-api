@@ -492,6 +492,256 @@ export class LinkedInProfileScraper {
     }
   };
 
+  public extractUnixTimestamp(postId) {
+    // BigInt needed as we need to treat postId as 64 bit decimal. This reduces browser support.
+    // @ts-ignore
+    const asBinary = BigInt(postId).toString(2);
+    const first41Chars = asBinary.slice(0, 41);
+    const timestamp = parseInt(first41Chars, 2);
+    return timestamp;
+  }
+  
+  public unixTimestampToHumanDate(timestamp) {
+    const dateObject = new Date(timestamp);
+    const humanDateFormat = dateObject.toUTCString()+" (UTC)";
+    return humanDateFormat;
+  }
+  
+  public getDate(postId) {
+    const unixTimestamp = this.extractUnixTimestamp(postId);
+    const humanDateFormat = this.unixTimestampToHumanDate(unixTimestamp);
+    return {
+      unixTimestamp,
+      humanDateFormat
+    }
+  }
+
+  public getPosts = async (scraperSessionId: number, profileUrl: string) => {
+    const logSection = 'getPosts'
+    try {
+      // Eeach run has it's own page
+      const page = await this.createPage();
+
+      statusLog(logSection, `Navigating to LinkedIn profile: ${profileUrl}`, scraperSessionId)
+
+      await page.goto(`${profileUrl}/recent-activity/all/`, {
+        waitUntil: 'networkidle2',
+        timeout: this.options.timeout
+      });
+
+      statusLog(logSection, 'LinkedIn posts page loaded!', scraperSessionId)
+
+      statusLog(logSection, 'Getting all the LinkedIn post data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
+
+      await autoScroll(page);
+
+      statusLog(logSection, 'Parsing data...', scraperSessionId)
+
+      const seeMoreButtonsSelectors = ['.feed-shared-inline-show-more-text__see-more-text']
+
+      statusLog(logSection, 'Expanding all posts by clicking their "See more" buttons', scraperSessionId)
+
+      // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
+      await page.waitFor(100);
+
+      statusLog(logSection, 'Expanding all descriptions by clicking their "See more" buttons', scraperSessionId)
+
+      for (const seeMoreButtonSelector of seeMoreButtonsSelectors) {
+        const buttons = await page.$$(seeMoreButtonSelector)
+
+        for (const button of buttons) {
+          if (button) {
+            try {
+              statusLog(logSection, `Clicking button ${seeMoreButtonSelector}`, scraperSessionId)
+              await button.click()
+            } catch (err) {
+              statusLog(logSection, `Could not find or click see more button selector "${button}". So we skip that one.`, scraperSessionId)
+            }
+          }
+        }
+      }
+
+      statusLog(logSection, 'Parsing profile data...', scraperSessionId)
+
+
+      const rawUserPostData: any = await page.evaluate(() => {
+        const posts = document.querySelectorAll(".profile-creator-shared-feed-update__container")
+
+        const postDataArray:any = []
+
+        //@ts-ignore
+        for (const post of posts) {
+
+          const postIdDict = post.querySelector('[data-urn]').dataset.urn
+          const postId = postIdDict.split(':')[3]
+
+
+          const postTextElement = post.querySelector('.break-words')
+          const postText = postTextElement?.textContent || null
+
+          const postDateDetails = this.getDate(postId)
+
+          const postReactions = post.querySelector('.social-details-social-counts__reactions-count')
+          const postLikes = parseInt(postReactions?.textContent) || 0
+
+          const postCommentsElement = post.querySelector('.social-details-social-counts__comments')
+          const postComments = parseInt(postCommentsElement?.textContent.replace(" comments", "")) || null
+
+          const postSharesElement = post.querySelector('.social-details-social-counts__item--right-aligned:not(.social-details-social-counts__comments)')
+          const postShares = parseInt(postSharesElement?.textContent.replace(" reposts", "")) || null
+
+          const postData = {
+            postId,
+            postText,
+            postDateDetails,
+            postLikes,
+            postComments,
+            postShares
+          }
+
+          postDataArray.push(postData)
+          // const postViewsElement = post.querySelector('.feed-shared-views .visually-hidden')
+          // const postViews = postViewsElement?.textContent || null
+
+          // const postImageElement = post.querySelector('.feed-shared-image__image')
+          // const postImage = postImageElement?.getAttribute('src') || null
+
+          // const postVideoElement = post.querySelector('.feed-shared-video__container')
+          // const postVideo = postVideoElement?.getAttribute('src') || null
+
+          // const postLinkElement = post.querySelector('.feed-shared-article__link')
+          // const postLink = postLinkElement?.getAttribute('href') || null
+
+          // const postLinkTitleElement = post.querySelector('.feed-shared-article__title')
+          // const postLinkTitle = postLinkTitleElement?.textContent || null
+
+          // const postLinkDescriptionElement = post.querySelector('.feed-shared-article__description')
+          // const postLinkDescription = postLinkDescriptionElement?.textContent || null
+
+          // const postLinkImageElement = post.querySelector('.feed-shared-article__image')
+          // const postLinkImage = postLinkImageElement?.getAttribute('src') || null
+
+          // const postLinkSourceElement = post.querySelector('.feed-shared-article__source')
+          // const postLinkSource = postLinkSourceElement?.textContent || null
+
+          // const postLinkDomainElement = post.querySelector('.feed-shared-article__domain')
+          // const postLinkDomain = postLinkDomainElement?.textContent || null
+
+          // const postLinkDomainUrlElement = post.querySelector('.feed-shared-article__domain a')
+          // const postLinkDomainUrl = postLinkDomainUrlElement?.getAttribute('href') || null
+
+        }
+
+        return postDataArray
+
+      })
+
+      const userPostData: any = {
+        ...rawUserPostData,
+      }
+
+      statusLog(logSection, `Got user post data: ${JSON.stringify(userPostData)}`, scraperSessionId)
+
+      return userPostData
+    } catch (err) {
+      // Kill Puppeteer
+      await this.close()
+
+      statusLog(logSection, 'An error occurred during a run.')
+
+      // Throw the error up, allowing the user to handle this error himself.
+      throw err;
+    }
+  }
+
+  public getComments = async (scraperSessionId: number, profileUrl: string) => {
+    const logSection = 'getComments'
+    try {
+      // Eeach run has it's own page
+      const page = await this.createPage();
+
+      statusLog(logSection, `Navigating to LinkedIn profile: ${profileUrl}`, scraperSessionId)
+
+      await page.goto(`${profileUrl}/recent-activity/comments/`, {
+        waitUntil: 'networkidle2',
+        timeout: this.options.timeout
+      });
+
+      statusLog(logSection, 'LinkedIn comments page loaded!', scraperSessionId)
+
+      statusLog(logSection, 'Getting all the LinkedIn comments data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
+
+      await autoScroll(page);
+
+      statusLog(logSection, 'Parsing data...', scraperSessionId)
+
+      const seeMoreButtonsSelectors = ['.comments-comments-list__load-more-comments-button']
+
+      statusLog(logSection, 'Expanding all comments by clicking their "See more" buttons', scraperSessionId)
+
+      // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
+      await page.waitFor(100);
+
+      statusLog(logSection, 'Expanding all comments by clicking their "load more comments" buttons', scraperSessionId)
+
+      for (const seeMoreButtonSelector of seeMoreButtonsSelectors) {
+        const buttons = await page.$$(seeMoreButtonSelector)
+
+        for (const button of buttons) {
+          if (button) {
+            try {
+              statusLog(logSection, `Clicking button ${seeMoreButtonSelector}`, scraperSessionId)
+              await button.click()
+            } catch (err) {
+              statusLog(logSection, `Could not find or click see more button selector "${button}". So we skip that one.`, scraperSessionId)
+            }
+          }
+        }
+      }
+
+      statusLog(logSection, 'Parsing comment data...', scraperSessionId)
+      const commentDataArray:any = []
+
+      const rawComment: any = await page.evaluate(() => {
+        const posts = document.querySelectorAll(".profile-creator-shared-feed-update__container")
+
+        //@ts-ignore
+        for (const post of posts) {
+
+
+          const postCommentBox = post.querySelectorAll('.comments-comment-item')
+          const comments = []
+          for (const comment of postCommentBox) {
+            const commentMeta = comment.querySelectorAll('.comments-post-meta')
+            const isCommentAuthor = commentMeta.querySelector('.comments-post-meta__author-badge')
+            let commentText
+            if (isCommentAuthor){
+              commentText = comment.querySelectorAll('.comments-comment-item-content-body')[0].innerText || ""
+              if(commentText){
+                // @ts-ignore
+                comments.push(commentText)
+              }
+            }
+          }
+
+          commentDataArray.push(comments)
+        }
+      })
+
+
+      statusLog(logSection, `Got user rawComment data: ${JSON.stringify(rawComment)}`, scraperSessionId)
+      return rawComment
+    } catch (err) {
+      // Kill Puppeteer
+      await this.close()
+
+      statusLog(logSection, 'An error occurred during a run.')
+
+      // Throw the error up, allowing the user to handle this error himself.
+      throw err;
+    }
+  }
+
   /**
    * Method to scrape a user profile.
    */
@@ -834,6 +1084,14 @@ export class LinkedInProfileScraper {
 
       statusLog(logSection, `Done! Returned profile details for: ${profileUrl}`, scraperSessionId)
 
+      statusLog(logSection, `Parsing post data...`, scraperSessionId)
+
+      const posts = await this.getPosts(scraperSessionId, profileUrl);
+
+      statusLog(logSection, `Parsing comment data...`, scraperSessionId)
+
+      const comments = await this.getComments(scraperSessionId, profileUrl);
+
       if (!this.options.keepAlive) {
         statusLog(logSection, 'Not keeping the session alive.')
 
@@ -852,7 +1110,9 @@ export class LinkedInProfileScraper {
         experiences,
         education,
         volunteerExperiences,
-        skills
+        skills,
+        posts,
+        comments
       }
     } catch (err) {
       // Kill Puppeteer

@@ -8,7 +8,7 @@
     "isolatedModules": false,
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
-    "suppressImplicitAnyIndexErrors": true,
+    // "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": true,
     "noFallthroughCasesInSwitch": true,
     "declaration": true,
