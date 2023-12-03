@@ -1086,11 +1086,11 @@ export class LinkedInProfileScraper {
 
       statusLog(logSection, `Parsing post data...`, scraperSessionId)
 
-      const posts = await this.getPosts(scraperSessionId, profileUrl);
+      // const posts = await this.getPosts(scraperSessionId, profileUrl);
 
       statusLog(logSection, `Parsing comment data...`, scraperSessionId)
 
-      const comments = await this.getComments(scraperSessionId, profileUrl);
+      // const comments = await this.getComments(scraperSessionId, profileUrl);
 
       if (!this.options.keepAlive) {
         statusLog(logSection, 'Not keeping the session alive.')
