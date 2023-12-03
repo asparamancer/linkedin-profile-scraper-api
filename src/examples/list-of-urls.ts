@@ -16,14 +16,14 @@ import { LinkedInProfileScraper } from "../index";
 
   // Keep in mind, LinkedIn has usage limits
   // More about that here: https://www.linkedin.com/help/linkedin/answer/52950
-  const [someuser, natfriedman, williamhgates] = await Promise.all([
-    scraper.run("https://www.linkedin.com/in/someuser/"),
-    scraper.run("https://www.linkedin.com/in/natfriedman/"),
+  const [williamhgates] = await Promise.all([
+    // scraper.run("https://www.linkedin.com/in/someuser/"),
+    // scraper.run("https://www.linkedin.com/in/natfriedman/"),
     scraper.run("https://www.linkedin.com/in/williamhgates/"),
   ]);
 
   // Close the scraper to free up memory
   await scraper.close();
 
-  console.log(someuser, natfriedman, williamhgates);
+  console.log(williamhgates);
 })();
