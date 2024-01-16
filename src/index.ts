@@ -12,6 +12,12 @@ export interface Location {
   country: string | null
 }
 
+
+interface ScraperHistoryMemory {
+  lastPostID: number;
+  lastCommentID: number;
+}
+
 interface RawProfile {
   fullName: string | null;
   title: string | null;
@@ -168,7 +174,7 @@ export class LinkedInProfileScraper {
     keepAlive: false,
     timeout: 10000,
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
-    headless: true
+    headless: false
   }
 
   private browser: Browser | null = null;
@@ -216,56 +222,56 @@ export class LinkedInProfileScraper {
       statusLog(logSection, `Launching puppeteer in the ${this.options.headless ? 'background' : 'foreground'}...`)
 
       this.browser = await puppeteer.launch({
-        headless: this.options.headless,
-        args: [
-          ...(this.options.headless ? '---single-process' : '---start-maximized'),
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          "--proxy-server='direct://",
-          '--proxy-bypass-list=*',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--disable-gpu',
-          '--disable-features=site-per-process',
-          '--enable-features=NetworkService',
-          '--allow-running-insecure-content',
-          '--enable-automation',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding',
-          '--disable-web-security',
-          '--autoplay-policy=user-gesture-required',
-          '--disable-background-networking',
-          '--disable-breakpad',
-          '--disable-client-side-phishing-detection',
-          '--disable-component-update',
-          '--disable-default-apps',
-          '--disable-domain-reliability',
-          '--disable-extensions',
-          '--disable-features=AudioServiceOutOfProcess',
-          '--disable-hang-monitor',
-          '--disable-ipc-flooding-protection',
-          '--disable-notifications',
-          '--disable-offer-store-unmasked-wallet-cards',
-          '--disable-popup-blocking',
-          '--disable-print-preview',
-          '--disable-prompt-on-repost',
-          '--disable-speech-api',
-          '--disable-sync',
-          '--disk-cache-size=33554432',
-          '--hide-scrollbars',
-          '--ignore-gpu-blacklist',
-          '--metrics-recording-only',
-          '--mute-audio',
-          '--no-default-browser-check',
-          '--no-first-run',
-          '--no-pings',
-          '--no-zygote',
-          '--password-store=basic',
-          '--use-gl=swiftshader',
-          '--use-mock-keychain'
-        ],
-        timeout: this.options.timeout
+        headless: false,
+        executablePath: "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        // args: [
+        //   ...(this.options.headless ? '---single-process' : '---start-maximized'),
+        //   '--no-sandbox',
+        //   '--disable-setuid-sandbox',
+        //   "--proxy-server='direct://",
+        //   '--proxy-bypass-list=*',
+        //   '--disable-dev-shm-usage',
+        //   '--disable-accelerated-2d-canvas',
+        //   '--disable-gpu',
+        //   '--disable-features=site-per-process',
+        //   '--enable-features=NetworkService',
+        //   '--allow-running-insecure-content',
+        //   '--enable-automation',
+        //   '--disable-background-timer-throttling',
+        //   '--disable-backgrounding-occluded-windows',
+        //   '--disable-renderer-backgrounding',
+        //   '--disable-web-security',
+        //   '--autoplay-policy=user-gesture-required',
+        //   '--disable-background-networking',
+        //   '--disable-breakpad',
+        //   '--disable-client-side-phishing-detection',
+        //   '--disable-component-update',
+        //   '--disable-default-apps',
+        //   '--disable-domain-reliability',
+        //   '--disable-extensions',
+        //   '--disable-features=AudioServiceOutOfProcess',
+        //   '--disable-hang-monitor',
+        //   '--disable-ipc-flooding-protection',
+        //   '--disable-notifications',
+        //   '--disable-offer-store-unmasked-wallet-cards',
+        //   '--disable-popup-blocking',
+        //   '--disable-print-preview',
+        //   '--disable-prompt-on-repost',
+        //   '--disable-speech-api',
+        //   '--disable-sync',
+        //   '--disk-cache-size=33554432',
+        //   '--hide-scrollbars',
+        //   '--ignore-gpu-blacklist',
+        //   '--metrics-recording-only',
+        //   '--mute-audio',
+        //   '--no-default-browser-check',
+        //   '--no-first-run',
+        //   '--no-pings',
+        //   '--no-zygote',
+        //   '--password-store=basic',
+        //   '--use-gl=swiftshader',
+        //   '--use-mock-keychain'
+        // ],
       })
 
       statusLog(logSection, 'Puppeteer launched!')
@@ -415,6 +421,12 @@ export class LinkedInProfileScraper {
    * Freeing up memory.
    */
   public close = (page?: Page): Promise<void> => {
+
+    return new Promise (async (resolve, reject) => {
+
+      resolve()
+    })
+
     return new Promise(async (resolve, reject) => {
       const loggerPrefix = 'close';
 
@@ -434,7 +446,7 @@ export class LinkedInProfileScraper {
           await this.browser.close();
           statusLog(loggerPrefix, 'Closed browser!');
 
-          const browserProcessPid = this.browser.process().pid;
+          const browserProcessPid = this.browser?.process()?.pid;
 
           // Completely kill the browser process to prevent zombie processes
           // https://docs.browserless.io/blog/2019/03/13/more-observations.html#tip-2-when-you-re-done-kill-it-with-fire
@@ -474,8 +486,6 @@ export class LinkedInProfileScraper {
     // If we do not get redirected and stay on /login, we are logged out
     // If we get redirect to /feed, we are logged in
     await page.goto('https://www.linkedin.com/login', {
-      waitUntil: 'networkidle2',
-      timeout: this.options.timeout
     })
 
     const url = page.url()
@@ -517,18 +527,18 @@ export class LinkedInProfileScraper {
     }
   }
 
-  public getPosts = async (scraperSessionId: number, profileUrl: string) => {
+  public getPosts = async (scraperSessionId: number, profileUrl: string, lastPostID:number) => {
     const logSection = 'getPosts'
     try {
       // Eeach run has it's own page
       const page = await this.createPage();
 
-      statusLog(logSection, `Navigating to LinkedIn profile: ${profileUrl}`, scraperSessionId)
+      statusLog(logSection, `Navigating to LinkedIn posts: ${profileUrl}recent-activity/all/`, scraperSessionId)
 
-      await page.goto(`${profileUrl}/recent-activity/all/`, {
-        waitUntil: 'networkidle2',
-        timeout: this.options.timeout
+      await page.goto(`${profileUrl}recent-activity/all/`, {
       });
+
+      await page.waitForTimeout(4000)
 
       statusLog(logSection, 'LinkedIn posts page loaded!', scraperSessionId)
 
@@ -543,7 +553,7 @@ export class LinkedInProfileScraper {
       statusLog(logSection, 'Expanding all posts by clicking their "See more" buttons', scraperSessionId)
 
       // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
-      await page.waitFor(100);
+      await page.waitForTimeout(2000);
 
       statusLog(logSection, 'Expanding all descriptions by clicking their "See more" buttons', scraperSessionId)
 
@@ -572,15 +582,28 @@ export class LinkedInProfileScraper {
 
         //@ts-ignore
         for (const post of posts) {
+          // log number of posts 
 
-          const postIdDict = post.querySelector('[data-urn]').dataset.urn
-          const postId = postIdDict.split(':')[3]
+          // page.waitForSelector('.profile-creator-shared-feed-update__container')
+          const postIdDict = post.querySelector('[data-urn]')?.dataset?.urn || null
+          let postId
+          let postDateDetails
+          if(postIdDict){
+            postId = postIdDict.split(':')[3]
+            const asBinary = BigInt(postId).toString(2);
+            const first41Chars = asBinary.slice(0, 41);
+            const timestamp = parseInt(first41Chars, 2);
+            const dateObject = new Date(timestamp);
+            const humanDateFormat = dateObject.toUTCString()+" (UTC)";
+            postDateDetails = humanDateFormat
+          } else {
+            postId = null
+            postDateDetails = null
+          }
 
 
           const postTextElement = post.querySelector('.break-words')
           const postText = postTextElement?.textContent || null
-
-          const postDateDetails = this.getDate(postId)
 
           const postReactions = post.querySelector('.social-details-social-counts__reactions-count')
           const postLikes = parseInt(postReactions?.textContent) || 0
@@ -637,8 +660,12 @@ export class LinkedInProfileScraper {
 
       })
 
+      const filteredUserPostData = rawUserPostData.filter((post) => {
+        return post.postId > lastPostID
+      })
+
       const userPostData: any = {
-        ...rawUserPostData,
+        ...filteredUserPostData,
       }
 
       statusLog(logSection, `Got user post data: ${JSON.stringify(userPostData)}`, scraperSessionId)
@@ -646,7 +673,7 @@ export class LinkedInProfileScraper {
       return userPostData
     } catch (err) {
       // Kill Puppeteer
-      await this.close()
+      // await this.close()
 
       statusLog(logSection, 'An error occurred during a run.')
 
@@ -655,7 +682,7 @@ export class LinkedInProfileScraper {
     }
   }
 
-  public getComments = async (scraperSessionId: number, profileUrl: string) => {
+  public getComments = async (scraperSessionId: number, profileUrl: string, lastCommentID: number) => {
     const logSection = 'getComments'
     try {
       // Eeach run has it's own page
@@ -664,8 +691,6 @@ export class LinkedInProfileScraper {
       statusLog(logSection, `Navigating to LinkedIn profile: ${profileUrl}`, scraperSessionId)
 
       await page.goto(`${profileUrl}/recent-activity/comments/`, {
-        waitUntil: 'networkidle2',
-        timeout: this.options.timeout
       });
 
       statusLog(logSection, 'LinkedIn comments page loaded!', scraperSessionId)
@@ -681,7 +706,7 @@ export class LinkedInProfileScraper {
       statusLog(logSection, 'Expanding all comments by clicking their "See more" buttons', scraperSessionId)
 
       // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
-      await page.waitFor(100);
+      await page.waitForTimeout(3000);
 
       statusLog(logSection, 'Expanding all comments by clicking their "load more comments" buttons', scraperSessionId)
 
@@ -701,40 +726,46 @@ export class LinkedInProfileScraper {
       }
 
       statusLog(logSection, 'Parsing comment data...', scraperSessionId)
-      const commentDataArray:any = []
 
+
+      await page.waitForTimeout(3000);
       const rawComment: any = await page.evaluate(() => {
+        const commentDataArray:any = []
         const posts = document.querySelectorAll(".profile-creator-shared-feed-update__container")
 
         //@ts-ignore
         for (const post of posts) {
-
-
           const postCommentBox = post.querySelectorAll('.comments-comment-item')
           const comments = []
           for (const comment of postCommentBox) {
             const commentMeta = comment.querySelectorAll('.comments-post-meta')
-            const isCommentAuthor = commentMeta.querySelector('.comments-post-meta__author-badge')
+
+            for (const meta of commentMeta) {
+
+            const isCommentAuthor = meta.querySelector('.comments-post-meta__author-badge')
             let commentText
             if (isCommentAuthor){
-              commentText = comment.querySelectorAll('.comments-comment-item-content-body')[0].innerText || ""
+              commentText = comment.querySelector('.comments-comment-item-content-body')?.innerText || ""
               if(commentText){
                 // @ts-ignore
                 comments.push(commentText)
               }
             }
           }
+        }
 
           commentDataArray.push(comments)
         }
+
+        return commentDataArray
       })
+
+      // do something with lastCommentID
 
 
       statusLog(logSection, `Got user rawComment data: ${JSON.stringify(rawComment)}`, scraperSessionId)
       return rawComment
     } catch (err) {
-      // Kill Puppeteer
-      await this.close()
 
       statusLog(logSection, 'An error occurred during a run.')
 
@@ -746,8 +777,11 @@ export class LinkedInProfileScraper {
   /**
    * Method to scrape a user profile.
    */
-  public run = async (profileUrl: string) => {
+  public run = async (profileUrl: string, options?: ScraperHistoryMemory) => {
     const logSection = 'run'
+
+    const lastPostID = options?.lastPostID || 0
+    const lastCommentID = options?.lastCommentID || 0
 
     const scraperSessionId = new Date().getTime();
 
@@ -772,8 +806,6 @@ export class LinkedInProfileScraper {
       await page.goto(profileUrl, {
         // Use "networkidl2" here and not "domcontentloaded". 
         // As with "domcontentloaded" some elements might not be loaded correctly, resulting in missing data.
-        waitUntil: 'networkidle2',
-        timeout: this.options.timeout
       });
 
       statusLog(logSection, 'LinkedIn profile page loaded!', scraperSessionId)
@@ -809,7 +841,7 @@ export class LinkedInProfileScraper {
       
 
       // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
-      await page.waitFor(100);
+      await page.waitForTimeout(100);
 
       statusLog(logSection, 'Expanding all descriptions by clicking their "See more" buttons', scraperSessionId)
 
@@ -860,8 +892,6 @@ export class LinkedInProfileScraper {
         } as RawProfile
       })
 
-      // Convert the raw data to clean data using our utils
-      // So we don't have to inject our util methods inside the browser context, which is too damn difficult using TypeScript
       const userProfile: Profile = {
         ...rawUserProfileData,
         fullName: getCleanText(rawUserProfileData.fullName),
@@ -920,8 +950,7 @@ export class LinkedInProfileScraper {
         return data;
       });
 
-      // Convert the raw data to clean data using our utils
-      // So we don't have to inject our util methods inside the browser context, which is too damn difficult using TypeScript
+
       const experiences: Experience[] = rawExperiencesData.map((rawExperience) => {
         const startDate = formatDate(rawExperience.startDate);
         const endDate = formatDate(rawExperience.endDate) || null;
@@ -987,8 +1016,6 @@ export class LinkedInProfileScraper {
         return data
       });
 
-      // Convert the raw data to clean data using our utils
-      // So we don't have to inject our util methods inside the browser context, which is too damn difficult using TypeScript
       const education: Education[] = rawEducationData.map(rawEducation => {
         const startDate = formatDate(rawEducation.startDate)
         const endDate = formatDate(rawEducation.endDate)
@@ -1009,8 +1036,6 @@ export class LinkedInProfileScraper {
       statusLog(logSection, `Parsing volunteer experience data...`, scraperSessionId)
 
       const rawVolunteerExperiences: RawVolunteerExperience[] = await page.$$eval('.pv-profile-section.volunteering-section ul > li.ember-view', (nodes) => {
-        // Note: the $$eval context is the browser context.
-        // So custom methods you define in this file are not available within this $$eval.
         let data: RawVolunteerExperience[] = []
         for (const node of nodes) {
 
@@ -1045,8 +1070,6 @@ export class LinkedInProfileScraper {
         return data
       });
 
-      // Convert the raw data to clean data using our utils
-      // So we don't have to inject our util methods inside the browser context, which is too damn difficult using TypeScript
       const volunteerExperiences: VolunteerExperience[] = rawVolunteerExperiences.map(rawVolunteerExperience => {
         const startDate = formatDate(rawVolunteerExperience.startDate)
         const endDate = formatDate(rawVolunteerExperience.endDate)
@@ -1087,11 +1110,15 @@ export class LinkedInProfileScraper {
 
       statusLog(logSection, `Parsing post data...`, scraperSessionId)
 
-      // const posts = await this.getPosts(scraperSessionId, profileUrl);
+      const posts = await this.getPosts(scraperSessionId, profileUrl, lastPostID);
+
+      console.log("KHJOIUYHJKNJOIUH", posts)
 
       statusLog(logSection, `Parsing comment data...`, scraperSessionId)
 
-      // const comments = await this.getComments(scraperSessionId, profileUrl);
+      const comments = await this.getComments(scraperSessionId, profileUrl, lastCommentID);
+
+      console.log("ASDASDAS", comments)
 
       if (!this.options.keepAlive) {
         statusLog(logSection, 'Not keeping the session alive.')

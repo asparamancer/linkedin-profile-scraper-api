@@ -2,3 +2,5 @@
 node_modules
 coverage
 dist
+
+src/examples/list-of-urls.ts
