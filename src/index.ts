@@ -20,49 +20,43 @@ interface ScraperHistoryMemory {
 
 interface RawProfile {
   fullName: string | null;
+  pronouns: string | null;
   title: string | null;
   location: string | null;
+  about: string | null;
   photo: string | null;
-  description: string | null;
   url: string;
 }
 
 export interface Profile {
   fullName: string | null;
+  pronouns: string | null;
   title: string | null;
   location: Location | null;
+  about: string | null;
   photo: string | null;
-  description: string | null;
   url: string;
 }
 
 interface RawExperience {
   title: string | null;
   company: string | null;
-  employmentType: string | null;
-  location: string | null;
   startDate: string | null;
   endDate: string | null;
-  endDateIsPresent: boolean;
   description: string | null;
 }
 
 export interface Experience {
   title: string | null;
   company: string | null;
-  employmentType: string | null;
-  location: Location | null;
   startDate: string | null;
   endDate: string | null;
-  endDateIsPresent: boolean;
-  durationInDays: number | null;
   description: string | null;
 }
 
 interface RawEducation {
   schoolName: string | null;
   degreeName: string | null;
-  fieldOfStudy: string | null;
   startDate: string | null;
   endDate: string | null;
 }
@@ -70,35 +64,50 @@ interface RawEducation {
 export interface Education {
   schoolName: string | null;
   degreeName: string | null;
-  fieldOfStudy: string | null;
   startDate: string | null;
   endDate: string | null;
   durationInDays: number | null;
 }
 
-interface RawVolunteerExperience {
-  title: string | null;
-  company: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  endDateIsPresent: boolean;
-  description: string | null;
+interface RawLicense {
+  licenseName: string | null;
+  licenseBody: string | null;
 }
 
-export interface VolunteerExperience {
-  title: string | null;
-  company: string | null;
-  startDate: string | null;
-  endDate: string | null;
-  endDateIsPresent: boolean;
-  durationInDays: number | null;
-  description: string | null;
+export interface License {
+  licenseName: string | null;
+  licenseBody: string | null;
+}
+
+interface RawLanguage {
+  languageName: string | null;
+  languageLevel: string | null;
+}
+
+export interface Language {
+  languageName: string | null;
+  languageLevel: string | null;
 }
 
 export interface Skill {
   skillName: string | null;
-  endorsementCount: number | null;
 }
+
+export interface Volunteering{
+  title: string | null;
+  company: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  description: string | null;
+}
+
+export interface Honor {
+  title: string | null;
+  company: string | null;
+  date: string | null;
+  description: string | null;
+}
+
 
 interface ScraperUserDefinedOptions {
   /**
@@ -151,7 +160,7 @@ interface ScraperOptions {
 
 async function autoScroll(page: Page) {
   await page.evaluate(() => {
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       var totalHeight = 0;
       var distance = 500;
       var timer = setInterval(() => {
@@ -300,7 +309,7 @@ export class LinkedInProfileScraper {
     }
 
     // Important: Do not block "stylesheet", makes the crawler not work for LinkedIn
-    const blockedResources = ['image', 'media', 'font', 'texttrack', 'object', 'beacon', 'csp_report', 'imageset'];
+    const blockedResources = ['media', 'font', 'texttrack', 'object', 'beacon', 'csp_report', 'imageset'];
 
     try {
       const page = await this.browser.newPage()
@@ -530,7 +539,6 @@ export class LinkedInProfileScraper {
   public getPosts = async (scraperSessionId: number, profileUrl: string, lastPostID:number) => {
     const logSection = 'getPosts'
     try {
-      // Eeach run has it's own page
       const page = await this.createPage();
 
       statusLog(logSection, `Navigating to LinkedIn posts: ${profileUrl}recent-activity/all/`, scraperSessionId)
@@ -538,7 +546,7 @@ export class LinkedInProfileScraper {
       await page.goto(`${profileUrl}recent-activity/all/`, {
       });
 
-      await page.waitForTimeout(4000)
+      await page.waitForTimeout(5000)
 
       statusLog(logSection, 'LinkedIn posts page loaded!', scraperSessionId)
 
@@ -546,36 +554,36 @@ export class LinkedInProfileScraper {
 
       await autoScroll(page);
 
-      statusLog(logSection, 'Parsing data...', scraperSessionId)
+      // statusLog(logSection, 'Parsing data...', scraperSessionId)
 
-      const seeMoreButtonsSelectors = ['.feed-shared-inline-show-more-text__see-more-text']
+      // const seeMoreButtonsSelectors = ['.feed-shared-inline-show-more-text__see-more-text']
 
-      statusLog(logSection, 'Expanding all posts by clicking their "See more" buttons', scraperSessionId)
+      // statusLog(logSection, 'Expanding all posts by clicking their "See more" buttons', scraperSessionId)
 
-      // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
-      await page.waitForTimeout(2000);
+      // // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
+      // await page.waitForTimeout(5000);
 
-      statusLog(logSection, 'Expanding all descriptions by clicking their "See more" buttons', scraperSessionId)
+      // statusLog(logSection, 'Expanding all descriptions by clicking their "See more" buttons', scraperSessionId)
 
-      for (const seeMoreButtonSelector of seeMoreButtonsSelectors) {
-        const buttons = await page.$$(seeMoreButtonSelector)
+      // for (const seeMoreButtonSelector of seeMoreButtonsSelectors) {
+      //   const buttons = await page.$$(seeMoreButtonSelector)
 
-        for (const button of buttons) {
-          if (button) {
-            try {
-              statusLog(logSection, `Clicking button ${seeMoreButtonSelector}`, scraperSessionId)
-              await button.click()
-            } catch (err) {
-              statusLog(logSection, `Could not find or click see more button selector "${button}". So we skip that one.`, scraperSessionId)
-            }
-          }
-        }
-      }
+      //   for (const button of buttons) {
+      //     if (button) {
+      //       try {
+      //         statusLog(logSection, `Clicking button ${seeMoreButtonSelector}`, scraperSessionId)
+      //         await button.click()
+      //       } catch (err) {
+      //         statusLog(logSection, `Could not find or click see more button selector "${button}". So we skip that one.`, scraperSessionId)
+      //       }
+      //     }
+      //   }
+      // }
 
-      statusLog(logSection, 'Parsing profile data...', scraperSessionId)
-
+      statusLog(logSection, 'Parsing Post data...', scraperSessionId)
 
       const rawUserPostData: any = await page.evaluate(() => {
+
         const posts = document.querySelectorAll(".profile-creator-shared-feed-update__container")
 
         const postDataArray:any = []
@@ -601,6 +609,7 @@ export class LinkedInProfileScraper {
             postDateDetails = null
           }
 
+          const postUrl = `https://www.linkedin.com/feed/update/urn:li:activity:${postId}`
 
           const postTextElement = post.querySelector('.break-words')
           const postText = postTextElement?.textContent || null
@@ -620,44 +629,14 @@ export class LinkedInProfileScraper {
             postDateDetails,
             postLikes,
             postComments,
-            postShares
+            postShares,
+            postUrl
           }
 
           postDataArray.push(postData)
-          // const postViewsElement = post.querySelector('.feed-shared-views .visually-hidden')
-          // const postViews = postViewsElement?.textContent || null
-
-          // const postImageElement = post.querySelector('.feed-shared-image__image')
-          // const postImage = postImageElement?.getAttribute('src') || null
-
-          // const postVideoElement = post.querySelector('.feed-shared-video__container')
-          // const postVideo = postVideoElement?.getAttribute('src') || null
-
-          // const postLinkElement = post.querySelector('.feed-shared-article__link')
-          // const postLink = postLinkElement?.getAttribute('href') || null
-
-          // const postLinkTitleElement = post.querySelector('.feed-shared-article__title')
-          // const postLinkTitle = postLinkTitleElement?.textContent || null
-
-          // const postLinkDescriptionElement = post.querySelector('.feed-shared-article__description')
-          // const postLinkDescription = postLinkDescriptionElement?.textContent || null
-
-          // const postLinkImageElement = post.querySelector('.feed-shared-article__image')
-          // const postLinkImage = postLinkImageElement?.getAttribute('src') || null
-
-          // const postLinkSourceElement = post.querySelector('.feed-shared-article__source')
-          // const postLinkSource = postLinkSourceElement?.textContent || null
-
-          // const postLinkDomainElement = post.querySelector('.feed-shared-article__domain')
-          // const postLinkDomain = postLinkDomainElement?.textContent || null
-
-          // const postLinkDomainUrlElement = post.querySelector('.feed-shared-article__domain a')
-          // const postLinkDomainUrl = postLinkDomainUrlElement?.getAttribute('href') || null
-
         }
 
         return postDataArray
-
       })
 
       const filteredUserPostData = rawUserPostData.filter((post) => {
@@ -685,13 +664,14 @@ export class LinkedInProfileScraper {
   public getComments = async (scraperSessionId: number, profileUrl: string, lastCommentID: number) => {
     const logSection = 'getComments'
     try {
-      // Eeach run has it's own page
       const page = await this.createPage();
 
-      statusLog(logSection, `Navigating to LinkedIn profile: ${profileUrl}`, scraperSessionId)
+      statusLog(logSection, `Navigating to LinkedIn comments: ${profileUrl}/recent-activity/comments/`, scraperSessionId)
 
       await page.goto(`${profileUrl}/recent-activity/comments/`, {
       });
+      
+      await page.waitForTimeout(5000)
 
       statusLog(logSection, 'LinkedIn comments page loaded!', scraperSessionId)
 
@@ -699,72 +679,59 @@ export class LinkedInProfileScraper {
 
       await autoScroll(page);
 
-      statusLog(logSection, 'Parsing data...', scraperSessionId)
-
-      const seeMoreButtonsSelectors = ['.comments-comments-list__load-more-comments-button']
-
-      statusLog(logSection, 'Expanding all comments by clicking their "See more" buttons', scraperSessionId)
-
-      // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
-      await page.waitForTimeout(3000);
-
-      statusLog(logSection, 'Expanding all comments by clicking their "load more comments" buttons', scraperSessionId)
-
-      for (const seeMoreButtonSelector of seeMoreButtonsSelectors) {
-        const buttons = await page.$$(seeMoreButtonSelector)
-
-        for (const button of buttons) {
-          if (button) {
-            try {
-              statusLog(logSection, `Clicking button ${seeMoreButtonSelector}`, scraperSessionId)
-              await button.click()
-            } catch (err) {
-              statusLog(logSection, `Could not find or click see more button selector "${button}". So we skip that one.`, scraperSessionId)
-            }
-          }
-        }
-      }
-
       statusLog(logSection, 'Parsing comment data...', scraperSessionId)
 
-
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(5000);
+      
       const rawComment: any = await page.evaluate(() => {
-        const commentDataArray:any = []
-        const posts = document.querySelectorAll(".profile-creator-shared-feed-update__container")
+        var comments = document.getElementsByClassName("comments-comment-item")
 
-        //@ts-ignore
-        for (const post of posts) {
-          const postCommentBox = post.querySelectorAll('.comments-comment-item')
-          const comments = []
-          for (const comment of postCommentBox) {
-            const commentMeta = comment.querySelectorAll('.comments-post-meta')
+        let profile_owner_comments : { commentId: string | number; commentText: string; commentDateDetails: string; }[] = []
 
-            for (const meta of commentMeta) {
-
-            const isCommentAuthor = meta.querySelector('.comments-post-meta__author-badge')
-            let commentText
-            if (isCommentAuthor){
-              commentText = comment.querySelector('.comments-comment-item-content-body')?.innerText || ""
-              if(commentText){
-                // @ts-ignore
-                comments.push(commentText)
-              }
+        var profile_owner = document.title.split(" | ")[1]
+        for (let i = 0; i < comments.length; i++) {
+            var author_span = comments[i].querySelector<HTMLElement>('.comments-post-meta__name-text')!
+            if (author_span.querySelector<HTMLElement>('span[aria-hidden="true"]')) {
+                var author = author_span.querySelector<HTMLElement>('span[aria-hidden="true"]')!.innerText
+            } else {
+                var author = author_span.innerText
             }
-          }
-        }
+            var commentText = comments[i].querySelector<HTMLElement>('.comments-comment-item__main-content')!.innerText
+            if (author == profile_owner) {
+                if (!profile_owner_comments.map(x=>x.commentText).includes(commentText)) {
+                    let commentId = comments[i].getAttribute('data-id')?.split(":")[4].split(",")[1].split(')')[0] || 0;
+                    let commentPostId = comments[i].getAttribute('data-id')?.split(":")[4].split(",")[0] || 0;
+                    const asBinary = BigInt(commentId).toString(2);
+                    const first41Chars = asBinary.slice(0, 41);
+                    const timestamp = parseInt(first41Chars, 2);
+                    const dateObject = new Date(timestamp);
+                    const humanDateFormat = dateObject.toUTCString()+" (UTC)";
 
-          commentDataArray.push(comments)
+                    const commentData = {
+                      commentId: commentId,
+                      commentPostId: commentPostId,
+                      commentText: commentText,
+                      commentDateDetails: humanDateFormat,
+                      commentUrl: `https://www.linkedin.com/feed/update/urn:li:activity:${commentPostId}/?commentUrn=urn:li:comment:(activity:${commentPostId},${commentId})&dashCommentUrn=urn:li:fsd_comment:(${commentId},urn:li:activity:${commentPostId})`
+                    }
+                    profile_owner_comments.push(commentData)
+                }
+            }
         }
-
-        return commentDataArray
+        return profile_owner_comments
       })
 
-      // do something with lastCommentID
+      const filteredUserCommentData = rawComment.filter((comment) => {
+        return comment.commentId > lastCommentID
+      })
+
+      const userCommentData: any = {
+        ...filteredUserCommentData,
+      }
 
 
-      statusLog(logSection, `Got user rawComment data: ${JSON.stringify(rawComment)}`, scraperSessionId)
-      return rawComment
+      statusLog(logSection, `Got user rawComment data: ${JSON.stringify(userCommentData)}`, scraperSessionId)
+      return userCommentData
     } catch (err) {
 
       statusLog(logSection, 'An error occurred during a run.')
@@ -774,6 +741,241 @@ export class LinkedInProfileScraper {
     }
   }
 
+  public getExperiences = async (scraperSessionId: number, profileUrl: string) => {
+    const logSection = 'getExperiences'
+
+    try {
+      const page = await this.createPage();
+
+      statusLog(logSection, `Navigating to LinkedIn experiences: ${profileUrl}details/experience/`, scraperSessionId)
+
+      await page.goto(`${profileUrl}details/experience/`, {
+      });
+
+      await page.waitForTimeout(5000)
+
+      statusLog(logSection, 'LinkedIn experience page loaded!', scraperSessionId)
+      statusLog(logSection, 'Getting all the LinkedIn experience data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
+
+      await autoScroll(page);
+      statusLog(logSection, 'Parsing experience data...', scraperSessionId)
+
+      await page.waitForTimeout(5000);
+      
+      const rawExperiences: any = await page.evaluate(() => {
+        let data: RawExperience[] = []
+
+        var experiences = document.querySelectorAll('.pvs-list__paged-list-item')
+        for (var i=0; i<experiences.length; i++) {
+          var exps = (<HTMLElement>experiences[i]).innerText.split('\n').filter(function(value, index, Arr) {
+              return index % 2 == 0;
+          });
+          if (!exps[0].includes('Nothing to see')) {
+            let title = exps[0];
+            let company = exps[1];
+            let dates = exps[2];
+            let startDate = dates.split(" · ")[0].split(' - ')[0];
+            let endDate = dates.split(" · ")[0].split(' - ')[1];
+            let description = exps.slice(3).join(", ")
+
+            data.push({
+              title: title,
+              company: company,
+              startDate: startDate,
+              endDate: endDate,
+              description: description
+            })
+          }
+        }
+        return data
+      })
+
+      statusLog(logSection, `Got user rawExperience data: ${JSON.stringify(rawExperiences)}`, scraperSessionId)
+      
+      
+      const experiences: Experience[] = {
+        ...rawExperiences
+      }
+      return experiences
+
+    }
+    catch (err) {
+
+      statusLog(logSection, 'An error occurred during a run.')
+
+      // Throw the error up, allowing the user to handle this error himself.
+      throw err;
+    }
+  }
+
+  public getSkills = async (scraperSessionId: number, profileUrl: string) => {
+    const logSection = 'getSkills'
+
+    try {
+      const page = await this.createPage();
+
+      statusLog(logSection, `Navigating to LinkedIn skills: ${profileUrl}details/skills/`, scraperSessionId)
+
+      await page.goto(`${profileUrl}details/skills/`, {
+      });
+
+      await page.waitForTimeout(5000)
+
+      statusLog(logSection, 'LinkedIn skills page loaded!', scraperSessionId)
+      statusLog(logSection, 'Getting all the LinkedIn skills data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
+
+      await autoScroll(page);
+      statusLog(logSection, 'Parsing skills data...', scraperSessionId)
+
+      await page.waitForTimeout(5000);
+      
+      const skills: any = await page.evaluate(() => {
+        let data: Skill[] = []
+
+        var skills = document.querySelectorAll('[data-field="skill_page_skill_topic"]')
+        for (var i=0; i<skills.length; i++) {
+            if ((<HTMLElement>skills[i]).innerText.split('\n')[0]!='') {
+              data.push({
+                skillName: (<HTMLElement>skills[i]).innerText.split('\n')[0]
+              })
+            }
+        }
+        return data
+      })
+
+      statusLog(logSection, `Got user skill data: ${JSON.stringify(skills)}`, scraperSessionId)
+     
+      return skills
+    }
+    catch (err) {
+
+      statusLog(logSection, 'An error occurred during a run.')
+
+      // Throw the error up, allowing the user to handle this error himself.
+      throw err;
+    }
+  }
+
+
+  public getVolunteerings = async (scraperSessionId: number, profileUrl: string) => {
+    const logSection = 'getVolunteerings'
+
+    try {
+      const page = await this.createPage();
+
+      statusLog(logSection, `Navigating to LinkedIn skills: ${profileUrl}details/volunteering-experiences/`, scraperSessionId)
+
+      await page.goto(`${profileUrl}details/volunteering-experiences/`, {
+      });
+
+      await page.waitForTimeout(5000)
+
+      statusLog(logSection, 'LinkedIn volunteering page loaded!', scraperSessionId)
+      statusLog(logSection, 'Getting all the LinkedIn volunteering data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
+
+      await autoScroll(page);
+      statusLog(logSection, 'Parsing volunteering data...', scraperSessionId)
+
+      await page.waitForTimeout(5000);
+      
+      const volunteerings: any = await page.evaluate(() => {
+        let data: Volunteering[] = []
+
+        var volunteerings = document.querySelectorAll('.pvs-list__paged-list-item')
+        for (var i=0; i<volunteerings.length; i++) {
+          var vols = (<HTMLElement>volunteerings[i]).innerText.split('\n').filter(function(value, index, Arr) {
+              return index % 2 == 0;
+          });
+          if (!vols[0].includes('Nothing to see')) {
+            let title = vols[0];
+            let company = vols[1];
+            let dates = vols[2];
+            let startDate = dates.split(" · ")[0].split(' - ')[0];
+            let endDate = dates.split(" · ")[0].split(' - ')[1];
+            let description = vols.slice(3).join(", ");
+
+            data.push({
+              title: title,
+              company: company,
+              startDate: startDate,
+              endDate: endDate,
+              description: description
+            })
+          }
+        }
+        return data
+      })
+
+      statusLog(logSection, `Got user volunteering data: ${JSON.stringify(volunteerings)}`, scraperSessionId)
+     
+      return volunteerings
+    }
+    catch (err) {
+
+      statusLog(logSection, 'An error occurred during a run.')
+
+      throw err;
+    }
+  }
+
+
+  public getHonors = async (scraperSessionId: number, profileUrl: string) => {
+    const logSection = 'getHonors'
+
+    try {
+      const page = await this.createPage();
+
+      statusLog(logSection, `Navigating to LinkedIn skills: ${profileUrl}details/honors/`, scraperSessionId)
+
+      await page.goto(`${profileUrl}details/honors/`, {
+      });
+
+      await page.waitForTimeout(5000)
+
+      statusLog(logSection, 'LinkedIn honors page loaded!', scraperSessionId)
+      statusLog(logSection, 'Getting all the LinkedIn honors data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
+
+      await autoScroll(page);
+      statusLog(logSection, 'Parsing honors data...', scraperSessionId)
+
+      await page.waitForTimeout(5000);
+      
+      const honors: any = await page.evaluate(() => {
+        let data: Honor[] = []
+
+        var honors = document.querySelectorAll('.pvs-list__paged-list-item')
+        for (var i=0; i<honors.length; i++) {
+          var hons = (<HTMLElement>honors[i]).innerText.split('\n').filter(function(value, index, Arr) {
+              return index % 2 == 0;
+          });
+          if (!hons[0].includes('Nothing to see')) {
+            let title = hons[0];
+            let company = hons[1].split(" · ")[0];
+            let date = hons[1].split(" · ")[1];
+            let description = hons.slice(2).join(", ");
+
+            data.push({
+              title: title,
+              company: company,
+              date: date,
+              description: description
+            })
+          }
+        }
+        return data
+      })
+
+      statusLog(logSection, `Got user honor data: ${JSON.stringify(honors)}`, scraperSessionId)
+     
+      return honors
+    }
+    catch (err) {
+
+      statusLog(logSection, 'An error occurred during a run.')
+
+      throw err;
+    }
+  }
   /**
    * Method to scrape a user profile.
    */
@@ -798,7 +1000,6 @@ export class LinkedInProfileScraper {
     }
 
     try {
-      // Eeach run has it's own page
       const page = await this.createPage();
 
       statusLog(logSection, `Navigating to LinkedIn profile: ${profileUrl}`, scraperSessionId)
@@ -808,214 +1009,128 @@ export class LinkedInProfileScraper {
         // As with "domcontentloaded" some elements might not be loaded correctly, resulting in missing data.
       });
 
+      await page.waitForTimeout(5000)
+
       statusLog(logSection, 'LinkedIn profile page loaded!', scraperSessionId)
 
       statusLog(logSection, 'Getting all the LinkedIn profile data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
 
       await autoScroll(page);
 
-      statusLog(logSection, 'Parsing data...', scraperSessionId)
-
-      // Only click the expanding buttons when they exist
-      const expandButtonsSelectors = [
-        '.pv-profile-section.pv-about-section .lt-line-clamp__more', // About
-        '#experience-section .pv-profile-section__see-more-inline.link', // Experience
-        '.pv-profile-section.education-section button.pv-profile-section__see-more-inline', // Education
-        '.pv-skill-categories-section [data-control-name="skill_details"]', // Skills
-      ];
-
-      const seeMoreButtonsSelectors = ['.pv-entity__description .lt-line-clamp__line.lt-line-clamp__line--last .lt-line-clamp__more[href="#"]', '.lt-line-clamp__more[href="#"]:not(.lt-line-clamp__ellipsis--dummy)']
-
-      statusLog(logSection, 'Expanding all sections by clicking their "See more" buttons', scraperSessionId)
-
-      for (const buttonSelector of expandButtonsSelectors) {
-        try {
-          if (await page.$(buttonSelector) !== null) {
-            statusLog(logSection, `Clicking button ${buttonSelector}`, scraperSessionId)
-            await page.click(buttonSelector);
-          }
-        } catch (err) {
-          statusLog(logSection, `Could not find or click expand button selector "${buttonSelector}". So we skip that one.`, scraperSessionId)
-        }
-      }
-      
-
-      // To give a little room to let data appear. Setting this to 0 might result in "Node is detached from document" errors
-      await page.waitForTimeout(100);
-
-      statusLog(logSection, 'Expanding all descriptions by clicking their "See more" buttons', scraperSessionId)
-
-      for (const seeMoreButtonSelector of seeMoreButtonsSelectors) {
-        const buttons = await page.$$(seeMoreButtonSelector)
-
-        for (const button of buttons) {
-          if (button) {
-            try {
-              statusLog(logSection, `Clicking button ${seeMoreButtonSelector}`, scraperSessionId)
-              await button.click()
-            } catch (err) {
-              statusLog(logSection, `Could not find or click see more button selector "${button}". So we skip that one.`, scraperSessionId)
-            }
-          }
-        }
-      }
-
       statusLog(logSection, 'Parsing profile data...', scraperSessionId)
 
-      const rawUserProfileData: RawProfile = await page.evaluate(() => {
-        const profileSection = document.querySelector('.pv-top-card')
-
+      const rawUserProfilePageData : any = await page.evaluate(() => {
         const url = window.location.href
 
-        const fullNameElement = profileSection?.querySelector('.pv-top-card--list li:first-child')
-        const fullName = fullNameElement?.textContent || null
+        const fullName = document.querySelector('.text-heading-xlarge.inline.t-24.v-align-middle.break-words')?.textContent || "";
+        const pronouns = document.querySelector('.text-body-small.v-align-middle.break-words.t-black--light')?.textContent || "";
+        const title = document.querySelector('.text-body-medium.break-words')?.textContent || "";
+        const location = document.querySelector('.text-body-small.inline.t-black--light.break-words')?.textContent || "";
+        const about = document.querySelector('.display-flex.ph5.pv3 div div div span')?.textContent || "";
 
-        const titleElement = profileSection?.querySelector('h2')
-        const title = titleElement?.textContent || null
+        var photo = "";
+        if (document.querySelector(".evi-image.ember-view.profile-photo-edit__preview")) {
+          photo = (<HTMLImageElement>document.querySelector(".evi-image.ember-view.profile-photo-edit__preview")).src;
+        }
 
-        const locationElement = profileSection?.querySelector('.pv-top-card--list.pv-top-card--list-bullet.mt1 li:first-child')
-        const location = locationElement?.textContent || null
-
-        const photoElement = profileSection?.querySelector('.pv-top-card__photo') || profileSection?.querySelector('.profile-photo-edit__preview')
-        const photo = photoElement?.getAttribute('src') || null
-
-        const descriptionElement = document.querySelector('.pv-about__summary-text .lt-line-clamp__raw-line') // Is outside "profileSection"
-        const description = descriptionElement?.textContent || null
-
-        return {
+      let raw_profile: RawProfile = {
           fullName,
+          pronouns,
           title,
           location,
+          about,
           photo,
-          description,
           url
-        } as RawProfile
-      })
+      };
+      
+      let raw_education: RawEducation[] = [];
+      let raw_license: RawLicense[] = [];
+      let raw_language: RawLanguage[] = [];
+
+      const items = document.querySelectorAll('.artdeco-list__item');
+      
+      for (let i = 0; i < items.length; i++) {
+
+        const top = items[i].parentElement?.parentElement?.previousElementSibling;
+        if (top) {
+          const title = top.textContent!.trim();
+
+          if (title.includes("Education")) {
+              const schoolName = items[i].querySelector<HTMLElement>('.display-flex.flex-wrap.align-items-center.full-height')?.innerText.split('\n')[0] || null;
+              var degreeName = "";
+              if (items[i].querySelector('.t-14.t-normal')) {
+                degreeName = items[i].querySelector<HTMLElement>('.t-14.t-normal')?.innerText.split('\n')[0] || "";
+              }
+              var dates = "";
+              if (items[i].querySelector('.pvs-entity__caption-wrapper')) {
+                dates = items[i].querySelector<HTMLElement>('.pvs-entity__caption-wrapper')?.innerText.split('\n')[0] || "";
+              }
+              const startDate = (dates != "") && dates.split(" - ")[0] || null;
+              const endDate = (dates != "") && dates.split(" - ")[1] || null;
+
+              raw_education.push({
+                schoolName,
+                degreeName,
+                startDate,
+                endDate
+              })
+
+          }
+          else if (title.includes("Licenses & certifications")) {
+              const licenseName = items[i].querySelector<HTMLElement>('.display-flex.flex-wrap.align-items-center.full-height')?.innerText.split('\n')[0] || null;
+              var licenseBody = "";
+              if (items[i].querySelector('.t-14.t-normal')) {
+                licenseBody = items[i].querySelector<HTMLElement>('.t-14.t-normal')?.innerText.split('\n')[0] || "";
+              }
+
+              raw_license.push({
+                licenseName,
+                licenseBody
+              })
+
+          }
+          else if (title.includes("Languages")) {
+            const languageName = items[i].querySelector<HTMLElement>('.display-flex.flex-wrap.align-items-center.full-height')?.innerText.split('\n')[0] || null;
+            const languageLevel = items[i].querySelector<HTMLElement>('.t-14.t-normal.t-black--light')?.innerText.split('\n')[0] || null;
+
+            raw_language.push({
+              languageName,
+              languageLevel
+            })
+          }
+        }
+      }
+      return {
+        raw_profile: raw_profile,
+        raw_education: raw_education, 
+        raw_license: raw_license, 
+        raw_language: raw_language
+      }
+    });
+
+      const rawUserProfileData = rawUserProfilePageData['raw_profile'];
+      const rawEducationData = rawUserProfilePageData['raw_education'];
+      const rawLicenseData = rawUserProfilePageData['raw_license'];
+      const rawLanguageData = rawUserProfilePageData['raw_language'];
+
+      statusLog(logSection, `rawUserProfileData: ${JSON.stringify(rawUserProfileData)}`, scraperSessionId)
+      statusLog(logSection, `rawEducationData: ${JSON.stringify(rawEducationData)}`, scraperSessionId)
+      statusLog(logSection, `rawLicenseData: ${JSON.stringify(rawLicenseData)}`, scraperSessionId)
+      statusLog(logSection, `rawLanguageData: ${JSON.stringify(rawLanguageData)}`, scraperSessionId)
+
 
       const userProfile: Profile = {
         ...rawUserProfileData,
         fullName: getCleanText(rawUserProfileData.fullName),
+        pronouns: getCleanText(rawUserProfileData.pronouns),
         title: getCleanText(rawUserProfileData.title),
+        photo: rawUserProfileData.photo,
         location: rawUserProfileData.location ? getLocationFromText(rawUserProfileData.location) : null,
-        description: getCleanText(rawUserProfileData.description),
+        about: getCleanText(rawUserProfileData.about),
       }
 
       statusLog(logSection, `Got user profile data: ${JSON.stringify(userProfile)}`, scraperSessionId)
-
-      statusLog(logSection, `Parsing experiences data...`, scraperSessionId)
-
-      const rawExperiencesData: RawExperience[] = await page.$$eval('#experience-section ul > .ember-view', (nodes) => {
-        let data: RawExperience[] = []
-
-        // Using a for loop so we can use await inside of it
-        for (const node of nodes) {
-          const titleElement = node.querySelector('h3');
-          const title = titleElement?.textContent || null
-
-          const employmentTypeElement = node.querySelector('span.pv-entity__secondary-title');
-          const employmentType = employmentTypeElement?.textContent || null
-
-          const companyElement = node.querySelector('.pv-entity__secondary-title');
-          const companyElementClean = companyElement && companyElement?.querySelector('span') ? companyElement?.removeChild(companyElement.querySelector('span') as Node) && companyElement : companyElement || null;
-          const company = companyElementClean?.textContent || null
-
-          const descriptionElement = node.querySelector('.pv-entity__description');
-          const description = descriptionElement?.textContent || null
-
-          const dateRangeElement = node.querySelector('.pv-entity__date-range span:nth-child(2)');
-          const dateRangeText = dateRangeElement?.textContent || null
-
-          const startDatePart = dateRangeText?.split('–')[0] || null;
-          const startDate = startDatePart?.trim() || null;
-
-          const endDatePart = dateRangeText?.split('–')[1] || null;
-          const endDateIsPresent = endDatePart?.trim().toLowerCase() === 'present' || false;
-          const endDate = (endDatePart && !endDateIsPresent) ? endDatePart.trim() : 'Present';
-
-          const locationElement = node.querySelector('.pv-entity__location span:nth-child(2)');
-          const location = locationElement?.textContent || null;
-
-          data.push({
-            title,
-            company,
-            employmentType,
-            location,
-            startDate,
-            endDate,
-            endDateIsPresent,
-            description
-          })
-        }
-
-        return data;
-      });
-
-
-      const experiences: Experience[] = rawExperiencesData.map((rawExperience) => {
-        const startDate = formatDate(rawExperience.startDate);
-        const endDate = formatDate(rawExperience.endDate) || null;
-        const endDateIsPresent = rawExperience.endDateIsPresent;
-
-        const durationInDaysWithEndDate = (startDate && endDate && !endDateIsPresent) ? getDurationInDays(startDate, endDate) : null
-        const durationInDaysForPresentDate = (endDateIsPresent && startDate) ? getDurationInDays(startDate, new Date()) : null
-        const durationInDays = endDateIsPresent ? durationInDaysForPresentDate : durationInDaysWithEndDate;
-
-        return {
-          ...rawExperience,
-          title: getCleanText(rawExperience.title),
-          company: getCleanText(rawExperience.company),
-          employmentType: getCleanText(rawExperience.employmentType),
-          location: rawExperience?.location ? getLocationFromText(rawExperience.location) : null,
-          startDate,
-          endDate,
-          endDateIsPresent,
-          durationInDays,
-          description: getCleanText(rawExperience.description)
-        }
-      })
-
-      statusLog(logSection, `Got experiences data: ${JSON.stringify(experiences)}`, scraperSessionId)
-
-      statusLog(logSection, `Parsing education data...`, scraperSessionId)
-
-      const rawEducationData: RawEducation[] = await page.$$eval('#education-section ul > .ember-view', (nodes) => {
-        // Note: the $$eval context is the browser context.
-        // So custom methods you define in this file are not available within this $$eval.
-        let data: RawEducation[] = []
-        for (const node of nodes) {
-
-          const schoolNameElement = node.querySelector('h3.pv-entity__school-name');
-          const schoolName = schoolNameElement?.textContent || null;
-
-          const degreeNameElement = node.querySelector('.pv-entity__degree-name .pv-entity__comma-item');
-          const degreeName = degreeNameElement?.textContent || null;
-
-          const fieldOfStudyElement = node.querySelector('.pv-entity__fos .pv-entity__comma-item');
-          const fieldOfStudy = fieldOfStudyElement?.textContent || null;
-
-          // const gradeElement = node.querySelector('.pv-entity__grade .pv-entity__comma-item');
-          // const grade = (gradeElement && gradeElement.textContent) ? window.getCleanText(fieldOfStudyElement.textContent) : null;
-
-          const dateRangeElement = node.querySelectorAll('.pv-entity__dates time');
-
-          const startDatePart = dateRangeElement && dateRangeElement[0]?.textContent || null;
-          const startDate = startDatePart || null
-
-          const endDatePart = dateRangeElement && dateRangeElement[1]?.textContent || null;
-          const endDate = endDatePart || null
-
-          data.push({
-            schoolName,
-            degreeName,
-            fieldOfStudy,
-            startDate,
-            endDate
-          })
-        }
-
-        return data
-      });
-
+      
       const education: Education[] = rawEducationData.map(rawEducation => {
         const startDate = formatDate(rawEducation.startDate)
         const endDate = formatDate(rawEducation.endDate)
@@ -1024,101 +1139,59 @@ export class LinkedInProfileScraper {
           ...rawEducation,
           schoolName: getCleanText(rawEducation.schoolName),
           degreeName: getCleanText(rawEducation.degreeName),
-          fieldOfStudy: getCleanText(rawEducation.fieldOfStudy),
           startDate,
           endDate,
           durationInDays: getDurationInDays(startDate, endDate),
         }
       })
-
       statusLog(logSection, `Got education data: ${JSON.stringify(education)}`, scraperSessionId)
 
-      statusLog(logSection, `Parsing volunteer experience data...`, scraperSessionId)
-
-      const rawVolunteerExperiences: RawVolunteerExperience[] = await page.$$eval('.pv-profile-section.volunteering-section ul > li.ember-view', (nodes) => {
-        let data: RawVolunteerExperience[] = []
-        for (const node of nodes) {
-
-          const titleElement = node.querySelector('.pv-entity__summary-info h3');
-          const title = titleElement?.textContent || null;
-          
-          const companyElement = node.querySelector('.pv-entity__summary-info span.pv-entity__secondary-title');
-          const company = companyElement?.textContent || null;
-
-          const dateRangeElement = node.querySelector('.pv-entity__date-range span:nth-child(2)');
-          const dateRangeText = dateRangeElement?.textContent || null
-          const startDatePart = dateRangeText?.split('–')[0] || null;
-          const startDate = startDatePart?.trim() || null;
-
-          const endDatePart = dateRangeText?.split('–')[1] || null;
-          const endDateIsPresent = endDatePart?.trim().toLowerCase() === 'present' || false;
-          const endDate = (endDatePart && !endDateIsPresent) ? endDatePart.trim() : 'Present';
-
-          const descriptionElement = node.querySelector('.pv-entity__description')
-          const description = descriptionElement?.textContent || null;
-
-          data.push({
-            title,
-            company,
-            startDate,
-            endDate,
-            endDateIsPresent,
-            description
-          })
-        }
-
-        return data
-      });
-
-      const volunteerExperiences: VolunteerExperience[] = rawVolunteerExperiences.map(rawVolunteerExperience => {
-        const startDate = formatDate(rawVolunteerExperience.startDate)
-        const endDate = formatDate(rawVolunteerExperience.endDate)
-
+      const license: License[] = rawLicenseData.map(rawLicense => {
         return {
-          ...rawVolunteerExperience,
-          title: getCleanText(rawVolunteerExperience.title),
-          company: getCleanText(rawVolunteerExperience.company),
-          description: getCleanText(rawVolunteerExperience.description),
-          startDate,
-          endDate,
-          durationInDays: getDurationInDays(startDate, endDate),
+          // ...rawLicense,
+          licenseName: getCleanText(rawLicense.licenseName),
+          licenseBody: getCleanText(rawLicense.licenseBody),
         }
       })
+      statusLog(logSection, `Got License & Cert data: ${JSON.stringify(license)}`, scraperSessionId)
 
-      statusLog(logSection, `Got volunteer experience data: ${JSON.stringify(volunteerExperiences)}`, scraperSessionId)
 
-      statusLog(logSection, `Parsing skills data...`, scraperSessionId)
-
-      const skills: Skill[] = await page.$$eval('.pv-skill-categories-section ol > .ember-view', nodes => {
-        // Note: the $$eval context is the browser context.
-        // So custom methods you define in this file are not available within this $$eval.
-
-        return nodes.map((node) => {
-          const skillName = node.querySelector('.pv-skill-category-entity__name-text');
-          const endorsementCount = node.querySelector('.pv-skill-category-entity__endorsement-count');
-
-          return {
-            skillName: (skillName) ? skillName.textContent?.trim() : null,
-            endorsementCount: (endorsementCount) ? parseInt(endorsementCount.textContent?.trim() || '0') : 0
-          } as Skill;
-        }) as Skill[]
-      });
-
-      statusLog(logSection, `Got skills data: ${JSON.stringify(skills)}`, scraperSessionId)
+      const language: Language[] = rawLanguageData.map(rawLanguage => {
+        return {
+          // ...rawLicense,
+          languageName: getCleanText(rawLanguage.languageName),
+          languageLevel: getCleanText(rawLanguage.languageLevel),
+        }
+      })
+      statusLog(logSection, `Got Language data: ${JSON.stringify(language)}`, scraperSessionId)
 
       statusLog(logSection, `Done! Returned profile details for: ${profileUrl}`, scraperSessionId)
 
+      statusLog(logSection, `Parsing experience data...`, scraperSessionId)
+      const experiences = await this.getExperiences(scraperSessionId, profileUrl);
+      console.log("# EXPERIENCES #", experiences)
+
+      statusLog(logSection, `Parsing skills data...`, scraperSessionId)
+      const skills = await this.getSkills(scraperSessionId, profileUrl);
+      console.log("# SKILLS #", skills)
+
+      statusLog(logSection, `Parsing volunteering data...`, scraperSessionId)
+      const volunteerings = await this.getVolunteerings(scraperSessionId, profileUrl);
+      console.log("# VOLUNTEERING #", volunteerings)
+
+      statusLog(logSection, `Parsing honors data...`, scraperSessionId)
+      const honors = await this.getHonors(scraperSessionId, profileUrl);
+      console.log("# HONORS #", honors)
+
       statusLog(logSection, `Parsing post data...`, scraperSessionId)
-
       const posts = await this.getPosts(scraperSessionId, profileUrl, lastPostID);
-
-      console.log("KHJOIUYHJKNJOIUH", posts)
+      console.log("# POSTS #", posts)
 
       statusLog(logSection, `Parsing comment data...`, scraperSessionId)
-
       const comments = await this.getComments(scraperSessionId, profileUrl, lastCommentID);
+      console.log("# COMMENTS #", comments)
 
-      console.log("ASDASDAS", comments)
+      
 
       if (!this.options.keepAlive) {
         statusLog(logSection, 'Not keeping the session alive.')
@@ -1129,7 +1202,6 @@ export class LinkedInProfileScraper {
       } else {
         statusLog(logSection, 'Done. Puppeteer is being kept alive in memory.')
 
-        // Only close the current page, we do not need it anymore
         await page.close()
       }
 
@@ -1137,8 +1209,8 @@ export class LinkedInProfileScraper {
         userProfile,
         experiences,
         education,
-        volunteerExperiences,
         skills,
+        volunteerings,
         posts,
         comments
       }
@@ -1147,8 +1219,6 @@ export class LinkedInProfileScraper {
       await this.close()
 
       statusLog(logSection, 'An error occurred during a run.')
-
-      // Throw the error up, allowing the user to handle this error himself.
       throw err;
     }
   }
