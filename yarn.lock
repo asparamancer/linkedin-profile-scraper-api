@@ -731,6 +731,11 @@
   dependencies:
     "@babel/types" "^7.20.7"
 
+"@types/bezier-js@4":
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/@types/bezier-js/-/bezier-js-4.1.3.tgz#237d4fe7e9aae7edd0c27a71f9f236f4ddc1c562"
+  integrity sha512-FNVVCu5mx/rJCWBxLTcL7oOajmGtWtBTDjq6DSUWUI12GeePivrZZXz+UgE0D6VYsLEjvExRO03z4hVtu3pTEQ==
+
 "@types/body-parser@*":
   version "1.19.5"
   resolved "https://registry.npmjs.org/@types/body-parser/-/body-parser-1.19.5.tgz"
@@ -1219,6 +1224,11 @@ before-after-hook@^2.2.0:
   version "2.2.3"
   resolved "https://registry.npmjs.org/before-after-hook/-/before-after-hook-2.2.3.tgz"
   integrity sha512-NzUnlZexiaH/46WDhANlyR2bXRopNg4F/zuSA3OpZnllCUgRaOF2znDioDWrmbNVsuZk6l9pMquQB38cfBZwkQ==
+
+bezier-js@^6.1.3:
+  version "6.1.4"
+  resolved "https://registry.yarnpkg.com/bezier-js/-/bezier-js-6.1.4.tgz#c7828f6c8900562b69d5040afb881bcbdad82001"
+  integrity sha512-PA0FW9ZpcHbojUCMu28z9Vg/fNkwTj5YhusSAjHHDfHDGLxJ6YUKrAN2vk1fP2MMOxVw4Oko16FMlRGVBGqLKg==
 
 binary-extensions@^2.0.0:
   version "2.2.0"
@@ -2480,6 +2490,15 @@ get-value@^2.0.3, get-value@^2.0.6:
   version "2.0.6"
   resolved "https://registry.npmjs.org/get-value/-/get-value-2.0.6.tgz"
   integrity sha512-Ln0UQDlxH1BapMu3GPtf7CuYNwRZf2gwCuPqbyG6pB8WfmFpzqcy4xtAaAMUhnNqjMKTiCPZG2oMT3YSx8U2NA==
+
+ghost-cursor@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/ghost-cursor/-/ghost-cursor-1.2.0.tgz#711ec4d83623469890c9f0833d86c1b673a9aa8f"
+  integrity sha512-iXoYqmeS5UQXKqolMoyaXvBdu2WSWbtznRt7gg6HcxGs8AAgrKK7xvFTTqzXVczoGXsaXAxZVKS0rEA0IhO04A==
+  dependencies:
+    "@types/bezier-js" "4"
+    bezier-js "^6.1.3"
+    debug "^4.3.4"
 
 git-up@^4.0.0:
   version "4.0.5"

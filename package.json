@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "all-the-cities": "^3.1.0",
+    "ghost-cursor": "^1.2.0",
     "i18n-iso-countries": "^5.4.0",
     "moment": "^2.27.0",
     "moment-timezone": "^0.5.31",

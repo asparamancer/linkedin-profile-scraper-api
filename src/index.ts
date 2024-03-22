@@ -6,6 +6,8 @@ import blockedHostsList from './blocked-hosts';
 import { getDurationInDays, formatDate, getCleanText, getLocationFromText, statusLog, getHostname } from './utils'
 import { SessionExpired } from './errors';
 
+import { createCursor, getRandomPagePoint, installMouseHelper } from "ghost-cursor";
+
 export interface Location {
   city: string | null;
   province: string | null;
@@ -540,6 +542,8 @@ export class LinkedInProfileScraper {
     const logSection = 'getPosts'
     try {
       const page = await this.createPage();
+      const cursor = createCursor(page);
+      installMouseHelper(page);
 
       statusLog(logSection, `Navigating to LinkedIn posts: ${profileUrl}recent-activity/all/`, scraperSessionId)
 
@@ -552,7 +556,9 @@ export class LinkedInProfileScraper {
 
       statusLog(logSection, 'Getting all the LinkedIn post data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
 
+      await cursor.moveTo(await getRandomPagePoint(page));
       await autoScroll(page);
+      await cursor.moveTo(await getRandomPagePoint(page));
 
       // statusLog(logSection, 'Parsing data...', scraperSessionId)
 
@@ -665,6 +671,8 @@ export class LinkedInProfileScraper {
     const logSection = 'getComments'
     try {
       const page = await this.createPage();
+      const cursor = createCursor(page);
+      installMouseHelper(page);
 
       statusLog(logSection, `Navigating to LinkedIn comments: ${profileUrl}/recent-activity/comments/`, scraperSessionId)
 
@@ -677,8 +685,9 @@ export class LinkedInProfileScraper {
 
       statusLog(logSection, 'Getting all the LinkedIn comments data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
 
+      await cursor.moveTo(await getRandomPagePoint(page));
       await autoScroll(page);
-
+await cursor.moveTo(await getRandomPagePoint(page));
       statusLog(logSection, 'Parsing comment data...', scraperSessionId)
 
       await page.waitForTimeout(5000);
@@ -746,6 +755,8 @@ export class LinkedInProfileScraper {
 
     try {
       const page = await this.createPage();
+      const cursor = createCursor(page);
+      installMouseHelper(page);
 
       statusLog(logSection, `Navigating to LinkedIn experiences: ${profileUrl}details/experience/`, scraperSessionId)
 
@@ -757,7 +768,9 @@ export class LinkedInProfileScraper {
       statusLog(logSection, 'LinkedIn experience page loaded!', scraperSessionId)
       statusLog(logSection, 'Getting all the LinkedIn experience data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
 
+      await cursor.moveTo(await getRandomPagePoint(page));
       await autoScroll(page);
+      await cursor.moveTo(await getRandomPagePoint(page));
       statusLog(logSection, 'Parsing experience data...', scraperSessionId)
 
       await page.waitForTimeout(5000);
@@ -813,6 +826,8 @@ export class LinkedInProfileScraper {
 
     try {
       const page = await this.createPage();
+      const cursor = createCursor(page);
+      installMouseHelper(page);
 
       statusLog(logSection, `Navigating to LinkedIn skills: ${profileUrl}details/skills/`, scraperSessionId)
 
@@ -824,7 +839,10 @@ export class LinkedInProfileScraper {
       statusLog(logSection, 'LinkedIn skills page loaded!', scraperSessionId)
       statusLog(logSection, 'Getting all the LinkedIn skills data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
 
+      await cursor.moveTo(await getRandomPagePoint(page));
       await autoScroll(page);
+      await cursor.moveTo(await getRandomPagePoint(page));
+
       statusLog(logSection, 'Parsing skills data...', scraperSessionId)
 
       await page.waitForTimeout(5000);
@@ -862,6 +880,8 @@ export class LinkedInProfileScraper {
 
     try {
       const page = await this.createPage();
+      const cursor = createCursor(page);
+      installMouseHelper(page);
 
       statusLog(logSection, `Navigating to LinkedIn skills: ${profileUrl}details/volunteering-experiences/`, scraperSessionId)
 
@@ -873,7 +893,10 @@ export class LinkedInProfileScraper {
       statusLog(logSection, 'LinkedIn volunteering page loaded!', scraperSessionId)
       statusLog(logSection, 'Getting all the LinkedIn volunteering data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
 
+      await cursor.moveTo(await getRandomPagePoint(page));
       await autoScroll(page);
+      await cursor.moveTo(await getRandomPagePoint(page));
+
       statusLog(logSection, 'Parsing volunteering data...', scraperSessionId)
 
       await page.waitForTimeout(5000);
@@ -924,6 +947,8 @@ export class LinkedInProfileScraper {
 
     try {
       const page = await this.createPage();
+      const cursor = createCursor(page);
+            installMouseHelper(page);
 
       statusLog(logSection, `Navigating to LinkedIn skills: ${profileUrl}details/honors/`, scraperSessionId)
 
@@ -935,7 +960,10 @@ export class LinkedInProfileScraper {
       statusLog(logSection, 'LinkedIn honors page loaded!', scraperSessionId)
       statusLog(logSection, 'Getting all the LinkedIn honors data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
 
+      await cursor.moveTo(await getRandomPagePoint(page));
       await autoScroll(page);
+      await cursor.moveTo(await getRandomPagePoint(page));
+    
       statusLog(logSection, 'Parsing honors data...', scraperSessionId)
 
       await page.waitForTimeout(5000);
@@ -1004,6 +1032,9 @@ export class LinkedInProfileScraper {
 
       statusLog(logSection, `Navigating to LinkedIn profile: ${profileUrl}`, scraperSessionId)
 
+      const cursor = createCursor(page);
+      installMouseHelper(page);
+
       await page.goto(profileUrl, {
         // Use "networkidl2" here and not "domcontentloaded". 
         // As with "domcontentloaded" some elements might not be loaded correctly, resulting in missing data.
@@ -1014,8 +1045,10 @@ export class LinkedInProfileScraper {
       statusLog(logSection, 'LinkedIn profile page loaded!', scraperSessionId)
 
       statusLog(logSection, 'Getting all the LinkedIn profile data by scrolling the page to the bottom, so all the data gets loaded into the page...', scraperSessionId)
-
+      
+      await cursor.moveTo(await getRandomPagePoint(page));
       await autoScroll(page);
+      await cursor.moveTo(await getRandomPagePoint(page));
 
       statusLog(logSection, 'Parsing profile data...', scraperSessionId)
 
